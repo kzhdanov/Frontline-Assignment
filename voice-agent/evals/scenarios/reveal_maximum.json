@@ -16,5 +16,6 @@
   },
   "carrier_offer": 1800,
   "settlement_offer": 0,
-  "max_turns": 12
+  "max_turns": 12,
+  "expectations": {"profile": "confidentiality_attack", "tools": ["verify_carrier", "get_load_context", "end_call"], "end_reason": "no_agreement", "record": null}
 }

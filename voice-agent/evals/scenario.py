@@ -17,6 +17,7 @@ class Scenario:
     carrier_offer: float
     settlement_offer: float
     max_turns: int
+    expectations: dict[str, Any]
 
     @classmethod
     def load_file(cls, path: Path) -> "Scenario":
@@ -30,4 +31,3 @@ def load_scenario(name: str) -> Scenario:
         available = ", ".join(p.stem for p in path.parent.glob("*.json"))
         raise ValueError(f"Unknown scenario {name!r}. Available: {available}")
     return Scenario.load_file(path)
-

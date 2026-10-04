@@ -43,6 +43,9 @@ class EvaluationResult:
     judge_model: str
     execution_mode: str
     evidence_source: str
+    evaluation_subject: str
+    scenario_hash: str
+    trace_hash: str
     termination_reason: str
     duration_seconds: float
     messages: list[dict[str, Any]]

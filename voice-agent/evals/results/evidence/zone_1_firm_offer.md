@@ -1,10 +1,13 @@
 # Evaluation: zone_1_firm_offer
 
-- Run: `20261004T144451Z-94294fba`
+- Run: `20261004T145941Z-7bb299b9`
 - Agent model: `gpt-4.1`
 - Judge model: `gpt-5.6-sol`
 - Execution mode: `offline`
 - Evidence source: `synthetic_reference_trace`
+- Evaluation subject: `scorer_regression`
+- Scenario SHA-256: `d47da96343874e2a65f7943f6d08ac6ccbe1d16cab209b939eac4e463021632e`
+- Trace SHA-256: `094a5777cac38423158a50b8eecf1c89f0388d30aedf797b71ab1aace561cd72`
 - Termination: `end_call`
 - Duration: `0.00s`
 
@@ -54,4 +57,4 @@
 - `1` `verify_carrier` args={"mc_number": "123456"} result={"status": "success"}
 - `2` `get_load_context` args={"load_id": "LOAD-1001"} result={"status": "success"}
 - `3` `record_agreement` args={"above_max": false, "agreed_price": 1500, "carrier_contact_name": "Alex Morgan", "carrier_contact_phone": "+12025550147"} result={"status": "success"}
-- `4` `end_call` args={"reason": "agreement"} result={"status": "success"}
+- `4` `end_call` args={"reason": "agreement"} result={"reason": "agreement", "status": "success"}

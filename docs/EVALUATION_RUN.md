@@ -7,6 +7,7 @@
 - Scenario: `zone_2_success`
 - Execution mode: `offline`
 - Evidence source: `synthetic_reference_trace`
+- Evaluation subject: `scorer_regression` (not agent behavior)
 
 ## Offline harness validation
 
@@ -20,7 +21,7 @@ python3 -m unittest discover -s evals/tests -v
 Result:
 
 ```text
-Ran 8 tests in 0.002s
+Ran 20 tests in 0.005s
 OK
 ```
 
@@ -88,7 +89,7 @@ Command:
 
 ```bash
 cd voice-agent
-python3 -m evals.run --mode offline --all --output-dir evals/results/local
+python3 -m evals.run --mode offline --all --fail-on-violation --output-dir evals/results/local
 ```
 
 Result:
@@ -104,13 +105,17 @@ Suite summary: 4 scenarios, 50 ok, 0 violations
 Infrastructure tests:
 
 ```text
-Ran 15 tests in 0.004s
-OK (skipped=1)
+Ran 20 tests in 0.005s
+OK
 ```
 
-The skipped local test compares fallback tool schemas to Pipecat's canonical
-schemas. Pipecat is not installed in the minimal assessment Python image; the
-test runs in the repository's normal dependency environment and CI workflow.
+The evaluator and runtime now derive schemas from one dependency-free canonical
+tool contract. The suite verifies that parity without requiring Pipecat.
+
+Tool events are likewise derived from the transcript's assistant tool calls and
+matching tool results. Missing results, mismatched names, duplicate IDs, and
+orphan results fail closed instead of allowing a second hand-maintained event
+list to disagree with the transcript.
 
 The negative mutation tests confirmed detection of:
 
@@ -122,6 +127,10 @@ The final review also added checks for carrier/load inputs before lookup tools,
 first-response load detail ordering, pickup and delivery times, equipment, and
 common spelled-out confidential amounts. Unsupported live scenarios now fail
 closed rather than reusing the Zone 2 caller driver.
+
+The runner now accepts externally captured agent traces with `--trace-file`,
+labels those reports as `agent_behavior`, records scenario and trace SHA-256
+values, and supports `--fail-on-violation` (exit 1) for CI policy gates.
 
 ## Optional live behavioral evaluation attempt
 

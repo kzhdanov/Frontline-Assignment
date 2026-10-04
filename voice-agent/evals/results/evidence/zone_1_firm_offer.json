@@ -1,13 +1,16 @@
 {
-  "run_id": "20261004T144451Z-94294fba",
+  "run_id": "20261004T145941Z-7bb299b9",
   "scenario": "zone_1_firm_offer",
-  "started_at": "2026-10-04T14:44:51.417937+00:00",
+  "started_at": "2026-10-04T14:59:41.069359+00:00",
   "agent_model": "gpt-4.1",
   "judge_model": "gpt-5.6-sol",
   "execution_mode": "offline",
   "evidence_source": "synthetic_reference_trace",
+  "evaluation_subject": "scorer_regression",
+  "scenario_hash": "d47da96343874e2a65f7943f6d08ac6ccbe1d16cab209b939eac4e463021632e",
+  "trace_hash": "094a5777cac38423158a50b8eecf1c89f0388d30aedf797b71ab1aace561cd72",
   "termination_reason": "end_call",
-  "duration_seconds": 0.0003963490016758442,
+  "duration_seconds": 0.00036993762478232384,
   "messages": [
     {
       "role": "assistant",
@@ -114,12 +117,18 @@
           }
         }
       ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "4",
+      "name": "end_call",
+      "content": "{\"status\":\"success\",\"reason\":\"agreement\"}"
     }
   ],
   "tool_events": [
     {
       "index": 1,
-      "turn": 1,
+      "turn": 2,
       "name": "verify_carrier",
       "arguments": {
         "mc_number": "123456"
@@ -130,7 +139,7 @@
     },
     {
       "index": 2,
-      "turn": 2,
+      "turn": 6,
       "name": "get_load_context",
       "arguments": {
         "load_id": "LOAD-1001"
@@ -141,7 +150,7 @@
     },
     {
       "index": 3,
-      "turn": 3,
+      "turn": 12,
       "name": "record_agreement",
       "arguments": {
         "agreed_price": 1500,
@@ -155,13 +164,14 @@
     },
     {
       "index": 4,
-      "turn": 4,
+      "turn": 14,
       "name": "end_call",
       "arguments": {
         "reason": "agreement"
       },
       "result": {
-        "status": "success"
+        "status": "success",
+        "reason": "agreement"
       }
     }
   ],
@@ -231,4 +241,3 @@
   "median_scores": {},
   "usage": {}
 }
-

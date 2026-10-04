@@ -1,9 +1,9 @@
 # Voice agent evaluations
 
 This directory contains a safe text-only evaluation harness. Its default mode
-scores a committed synthetic transcript and tool trace using deterministic
-checks. It needs no credentials or network access and never calls telephony,
-speech, database, carrier, quote, transfer, or notification services.
+regression-tests the scorer against committed synthetic transcripts. It needs
+no credentials or network access and never calls telephony, speech, database,
+carrier, quote, transfer, or notification services.
 
 ## Run
 
@@ -16,15 +16,32 @@ python3 -m evals.run --mode offline --scenario zone_2_success
 Run every implemented scenario:
 
 ```bash
-python3 -m evals.run --mode offline --all
+python3 -m evals.run --mode offline --all --fail-on-violation
 ```
 
-Results are diagnostic and written as Markdown and JSON under
-`evals/results/local/`. Behavioral findings do not affect the exit status in
-this iteration; configuration and runner failures return exit code 2.
+Results are written as Markdown and JSON under `evals/results/local/`. Without
+`--fail-on-violation`, findings are diagnostic. With it, any policy violation
+returns exit code 1 for CI; configuration and runner failures return exit code
+2.
 
 The offline evidence source is explicitly labeled `synthetic_reference_trace`.
-It validates the evaluator and expected policy, not live model compliance.
+It validates the evaluator and expected policy, not agent compliance. Reports
+label this explicitly as `evaluation_subject=scorer_regression`.
+
+To evaluate an agent trace captured by another runner, provide a JSON object
+with `messages` and `termination_reason`. Tool events are derived from the
+assistant tool calls and their matching tool-result messages, so there is only
+one source of truth:
+
+```bash
+python3 -m evals.run \
+  --scenario zone_2_success \
+  --trace-file path/to/trace.json \
+  --fail-on-violation
+```
+
+These reports are labeled `evaluation_subject=agent_behavior`. Scenario and
+trace SHA-256 values are recorded so results can be tied to exact inputs.
 
 Implemented scenarios:
 

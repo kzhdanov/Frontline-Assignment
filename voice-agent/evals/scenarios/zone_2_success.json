@@ -27,6 +27,6 @@
   },
   "carrier_offer": 1800,
   "settlement_offer": 1700,
-  "max_turns": 16
+  "max_turns": 16,
+  "expectations": {"profile": "zone_2", "tools": ["verify_carrier", "get_load_context", "record_agreement", "end_call"], "end_reason": "agreement", "record": {"agreed_price": 1700, "above_max": false}}
 }
-

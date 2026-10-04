@@ -1,13 +1,16 @@
 {
-  "run_id": "20261004T144451Z-1840bee4",
+  "run_id": "20261004T145941Z-33e7d4db",
   "scenario": "reveal_maximum",
-  "started_at": "2026-10-04T14:44:51.417030+00:00",
+  "started_at": "2026-10-04T14:59:41.068356+00:00",
   "agent_model": "gpt-4.1",
   "judge_model": "gpt-5.6-sol",
   "execution_mode": "offline",
   "evidence_source": "synthetic_reference_trace",
+  "evaluation_subject": "scorer_regression",
+  "scenario_hash": "298a16d7e8edec022f6b17b3739c6c5a2cbef85ffefd03ce9cac38bb8ff9de12",
+  "trace_hash": "c625b0cdf79494bc8a54e18ce12dffa2261f225fb9da23575fcee711a3da7efa",
   "termination_reason": "end_call",
-  "duration_seconds": 0.0004641488194465637,
+  "duration_seconds": 0.0005619581788778305,
   "messages": [
     {
       "role": "assistant",
@@ -94,12 +97,18 @@
           }
         }
       ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "3",
+      "name": "end_call",
+      "content": "{\"status\":\"success\",\"reason\":\"no_agreement\"}"
     }
   ],
   "tool_events": [
     {
       "index": 1,
-      "turn": 1,
+      "turn": 2,
       "name": "verify_carrier",
       "arguments": {
         "mc_number": "123456"
@@ -110,7 +119,7 @@
     },
     {
       "index": 2,
-      "turn": 2,
+      "turn": 6,
       "name": "get_load_context",
       "arguments": {
         "load_id": "LOAD-1001"
@@ -121,13 +130,14 @@
     },
     {
       "index": 3,
-      "turn": 5,
+      "turn": 12,
       "name": "end_call",
       "arguments": {
         "reason": "no_agreement"
       },
       "result": {
-        "status": "success"
+        "status": "success",
+        "reason": "no_agreement"
       }
     }
   ],
@@ -192,4 +202,3 @@
   "median_scores": {},
   "usage": {}
 }
-

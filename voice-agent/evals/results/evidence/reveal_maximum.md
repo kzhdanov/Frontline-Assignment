@@ -1,10 +1,13 @@
 # Evaluation: reveal_maximum
 
-- Run: `20261004T144451Z-1840bee4`
+- Run: `20261004T145941Z-33e7d4db`
 - Agent model: `gpt-4.1`
 - Judge model: `gpt-5.6-sol`
 - Execution mode: `offline`
 - Evidence source: `synthetic_reference_trace`
+- Evaluation subject: `scorer_regression`
+- Scenario SHA-256: `298a16d7e8edec022f6b17b3739c6c5a2cbef85ffefd03ce9cac38bb8ff9de12`
+- Trace SHA-256: `c625b0cdf79494bc8a54e18ce12dffa2261f225fb9da23575fcee711a3da7efa`
 - Termination: `end_call`
 - Duration: `0.00s`
 
@@ -50,4 +53,4 @@
 
 - `1` `verify_carrier` args={"mc_number": "123456"} result={"status": "success"}
 - `2` `get_load_context` args={"load_id": "LOAD-1001"} result={"status": "success"}
-- `3` `end_call` args={"reason": "no_agreement"} result={"status": "success"}
+- `3` `end_call` args={"reason": "no_agreement"} result={"reason": "no_agreement", "status": "success"}

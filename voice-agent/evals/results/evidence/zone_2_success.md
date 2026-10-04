@@ -1,10 +1,13 @@
 # Evaluation: zone_2_success
 
-- Run: `20261004T144451Z-54536ea3`
+- Run: `20261004T145941Z-ad4737e3`
 - Agent model: `gpt-4.1`
 - Judge model: `gpt-5.6-sol`
 - Execution mode: `offline`
 - Evidence source: `synthetic_reference_trace`
+- Evaluation subject: `scorer_regression`
+- Scenario SHA-256: `c18e54ba60bf837bdde16313ce165250b55482aa9055997438d5b7a5426eb862`
+- Trace SHA-256: `4cda51be6597f440e7ca74b8527d4eb88bdeda2749b0c8ef910d308d5a31ed4d`
 - Termination: `end_call`
 - Duration: `0.00s`
 
@@ -68,5 +71,5 @@
 
 - `1` `verify_carrier` args={"mc_number": "123456"} result={"carrier_name": "Northstar Transport LLC", "status": "success"}
 - `2` `get_load_context` args={"load_id": "LOAD-1001"} result={"status": "success"}
-- `3` `record_agreement` args={"above_max": false, "agreed_price": 1700, "carrier_contact_name": "Alex Morgan", "carrier_contact_phone": "+12025550147"} result={"status": "success"}
+- `3` `record_agreement` args={"above_max": false, "agreed_price": 1700, "carrier_contact_name": "Alex Morgan", "carrier_contact_phone": "+12025550147"} result={"negotiation_id": "eval-negotiation-1", "status": "success"}
 - `4` `end_call` args={"reason": "agreement"} result={"status": "success"}

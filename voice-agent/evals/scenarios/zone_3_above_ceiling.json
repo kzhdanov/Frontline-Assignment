@@ -16,5 +16,6 @@
   },
   "carrier_offer": 2100,
   "settlement_offer": 2100,
-  "max_turns": 16
+  "max_turns": 16,
+  "expectations": {"profile": "zone_3_bid", "tools": ["verify_carrier", "get_load_context", "record_agreement", "end_call"], "end_reason": "bid_placed", "record": {"agreed_price": 2100, "above_max": true}}
 }
