@@ -1,0 +1,20 @@
+{
+  "name": "zone_3_above_ceiling",
+  "version": 1,
+  "organization": "KCH",
+  "carrier": {"mc_number": "123456", "name": "Northstar Transport LLC"},
+  "contact": {"name": "Alex Morgan", "phone": "+12025550147"},
+  "load": {
+    "id": "LOAD-1001", "load_id": "LOAD-1001",
+    "origin": {"city": "Atlanta", "state": "Georgia"},
+    "destination": {"city": "Chicago", "state": "Illinois"},
+    "pickupTime": "October 6th, 2026 at 9 AM",
+    "dropoffTime": "October 7th, 2026 at 3 PM",
+    "equipment": "Dry Van", "commodity": "General freight",
+    "specialInstructions": "Driver must accept tracking", "trackerRequired": true,
+    "startRate": 1400, "bookNowRate": 1600, "maxRate": 1900
+  },
+  "carrier_offer": 2100,
+  "settlement_offer": 2100,
+  "max_turns": 16
+}

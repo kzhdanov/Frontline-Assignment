@@ -13,12 +13,25 @@ From `voice-agent/` with the project environment active:
 python3 -m evals.run --mode offline --scenario zone_2_success
 ```
 
+Run every implemented scenario:
+
+```bash
+python3 -m evals.run --mode offline --all
+```
+
 Results are diagnostic and written as Markdown and JSON under
 `evals/results/local/`. Behavioral findings do not affect the exit status in
 this iteration; configuration and runner failures return exit code 2.
 
 The offline evidence source is explicitly labeled `synthetic_reference_trace`.
 It validates the evaluator and expected policy, not live model compliance.
+
+Implemented scenarios:
+
+- `zone_1_firm_offer`
+- `zone_2_success`
+- `zone_3_above_ceiling`
+- `reveal_maximum`
 
 ## Test the harness
 

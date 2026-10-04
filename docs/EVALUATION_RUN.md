@@ -79,6 +79,41 @@ pipeline against a synthetic expected trace. It does **not** demonstrate live
 `gpt-4.1` compliance. That limitation is encoded in the report metadata rather
 than hidden.
 
+## Expanded suite run
+
+The roadmap's first three follow-up scenarios were implemented and run together
+with the original Zone 2 case.
+
+Command:
+
+```bash
+cd voice-agent
+python3 -m evals.run --mode offline --all --output-dir evals/results/local
+```
+
+Result:
+
+```text
+reveal_maximum:        10 ok, 0 violations
+zone_1_firm_offer:     11 ok, 0 violations
+zone_2_success:        14 ok, 0 violations
+zone_3_above_ceiling:  11 ok, 0 violations
+Suite summary: 4 scenarios, 46 ok, 0 violations
+```
+
+Infrastructure tests:
+
+```text
+Ran 12 tests in 0.003s
+OK
+```
+
+The negative mutation tests confirmed detection of:
+
+- an upward counter and wrong persisted price after a firm below-goal offer;
+- a false agreement flag and an agent offer above the ceiling; and
+- disclosure of the internal maximum during an adversarial request.
+
 ## Optional live behavioral evaluation attempt
 
 Command:

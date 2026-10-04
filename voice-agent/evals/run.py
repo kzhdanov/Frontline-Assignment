@@ -21,6 +21,7 @@ from .scenario import load_scenario
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a safe text evaluation of the voice agent")
     parser.add_argument("--scenario", default="zone_2_success")
+    parser.add_argument("--all", action="store_true", help="Run every available scenario")
     parser.add_argument("--mode", choices=("offline", "live"), default="offline")
     parser.add_argument("--judge-runs", type=int, default=3)
     parser.add_argument("--output-dir", type=Path, default=Path("evals/results/local"))
@@ -29,33 +30,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-    if args.judge_runs < 1:
-        print("error: --judge-runs must be positive", file=sys.stderr)
-        return 2
+def _run_one(args: argparse.Namespace, scenario_name: str) -> tuple[EvaluationResult, Path, Path]:
     started = time.monotonic()
     started_at = datetime.now(timezone.utc).isoformat()
-    try:
-        scenario = load_scenario(args.scenario)
-        if args.mode == "offline":
-            messages, events, termination, evidence_source = load_reference_trace(scenario.name)
-            agent_usage: dict[str, int] = {}
-            judge_usage: dict[str, int] = {}
-            judge_results = []
-            medians = {}
-        else:
-            client = OpenAIChatClient()
-            messages, simulator, termination, agent_usage = run_conversation(scenario, client, args.agent_model)
-            events = simulator.events
-            evidence_source = "live_model_conversation"
-            judge_results, medians, judge_usage = run_judges(
-                client, args.judge_model, scenario, messages, events, args.judge_runs
-            )
-        findings = evaluate_checks(scenario, messages, events, termination)
-    except (ValueError, ModelError) as exc:
-        print(f"evaluation infrastructure error: {exc}", file=sys.stderr)
-        return 2
+    scenario = load_scenario(scenario_name)
+    if args.mode == "offline":
+        messages, events, termination, evidence_source = load_reference_trace(scenario.name)
+        agent_usage: dict[str, int] = {}
+        judge_usage: dict[str, int] = {}
+        judge_results = []
+        medians = {}
+    else:
+        client = OpenAIChatClient()
+        messages, simulator, termination, agent_usage = run_conversation(scenario, client, args.agent_model)
+        events = simulator.events
+        evidence_source = "live_model_conversation"
+        judge_results, medians, judge_usage = run_judges(
+            client, args.judge_model, scenario, messages, events, args.judge_runs
+        )
+    findings = evaluate_checks(scenario, messages, events, termination)
 
     usage = {f"agent_{key}": value for key, value in agent_usage.items()}
     usage.update({f"judge_{key}": value for key, value in judge_usage.items()})
@@ -77,13 +70,36 @@ def main(argv: list[str] | None = None) -> int:
         evidence_source=evidence_source,
     )
     markdown, json_path = write_reports(result, args.output_dir)
-    print(f"Evaluation complete: {scenario.name}")
-    print(f"Programmatic findings: {sum(f.status == 'ok' for f in findings)} ok, {sum(f.status != 'ok' for f in findings)} violations")
-    if medians:
-        for criterion, score in medians.items():
+    return result, markdown, json_path
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    if args.judge_runs < 1:
+        print("error: --judge-runs must be positive", file=sys.stderr)
+        return 2
+    names = [args.scenario]
+    if args.all:
+        names = sorted(path.stem for path in (Path(__file__).parent / "scenarios").glob("*.json"))
+    try:
+        outputs = [_run_one(args, name) for name in names]
+    except (ValueError, ModelError) as exc:
+        print(f"evaluation infrastructure error: {exc}", file=sys.stderr)
+        return 2
+    total_ok = total_violations = 0
+    for result, markdown, json_path in outputs:
+        ok = sum(f.status == "ok" for f in result.findings)
+        violations = len(result.findings) - ok
+        total_ok += ok
+        total_violations += violations
+        print(f"Evaluation complete: {result.scenario}")
+        print(f"Programmatic findings: {ok} ok, {violations} violations")
+        for criterion, score in result.median_scores.items():
             print(f"  {criterion}: {score:g}/5")
-    print(f"Report: {markdown}")
-    print(f"JSON: {json_path}")
+        print(f"Report: {markdown}")
+        print(f"JSON: {json_path}")
+    if len(outputs) > 1:
+        print(f"Suite summary: {len(outputs)} scenarios, {total_ok} ok, {total_violations} violations")
     return 0
 
 

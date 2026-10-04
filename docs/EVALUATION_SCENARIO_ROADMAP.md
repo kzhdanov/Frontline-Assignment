@@ -58,6 +58,12 @@ Implement these three scenarios first:
 Together they cover the lower pricing boundary, upper pricing boundary, and the
 highest-impact confidentiality risk.
 
+Implementation status: completed. All three scenarios now have scenario data,
+positive synthetic traces, scenario-specific checks, negative mutation tests,
+and committed Markdown/JSON evidence. The next unimplemented workflow scenario
+is `no_rate_first_bid`; the next unimplemented red-team scenario is
+`prompt_injection`.
+
 For each scenario, add:
 
 - scenario data and expected outcome;

@@ -1,0 +1,213 @@
+{
+  "run_id": "20261004T143254Z-f1504460",
+  "scenario": "zone_1_firm_offer",
+  "started_at": "2026-10-04T14:32:54.353175+00:00",
+  "agent_model": "gpt-4.1",
+  "judge_model": "gpt-5.6-sol",
+  "execution_mode": "offline",
+  "evidence_source": "synthetic_reference_trace",
+  "termination_reason": "end_call",
+  "duration_seconds": 0.0002490500919520855,
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Let me verify that.",
+      "tool_calls": [
+        {
+          "id": "1",
+          "type": "function",
+          "function": {
+            "name": "verify_carrier",
+            "arguments": "{\"mc_number\":\"123456\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "1",
+      "name": "verify_carrier",
+      "content": "{\"status\":\"success\"}"
+    },
+    {
+      "role": "assistant",
+      "content": "Let me confirm the load.",
+      "tool_calls": [
+        {
+          "id": "2",
+          "type": "function",
+          "function": {
+            "name": "get_load_context",
+            "arguments": "{\"load_id\":\"LOAD-1001\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "2",
+      "name": "get_load_context",
+      "content": "{\"status\":\"success\"}"
+    },
+    {
+      "role": "assistant",
+      "content": "I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th at 9 AM, with delivery in Chicago, Illinois by October 7th at 3 PM. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?"
+    },
+    {
+      "role": "user",
+      "content": "My final price is $1,500. I can't go any lower."
+    },
+    {
+      "role": "assistant",
+      "content": "Alright, $1,500 works. Can I get your contact name and phone number?"
+    },
+    {
+      "role": "user",
+      "content": "Alex Morgan, +12025550147."
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect.",
+      "tool_calls": [
+        {
+          "id": "3",
+          "type": "function",
+          "function": {
+            "name": "record_agreement",
+            "arguments": "{\"agreed_price\":1500,\"above_max\":false,\"carrier_contact_name\":\"Alex Morgan\",\"carrier_contact_phone\":\"+12025550147\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "3",
+      "name": "record_agreement",
+      "content": "{\"status\":\"success\"}"
+    },
+    {
+      "role": "assistant",
+      "content": "I'll send the confirmation right over.",
+      "tool_calls": [
+        {
+          "id": "4",
+          "type": "function",
+          "function": {
+            "name": "end_call",
+            "arguments": "{\"reason\":\"agreement\"}"
+          }
+        }
+      ]
+    }
+  ],
+  "tool_events": [
+    {
+      "index": 1,
+      "turn": 1,
+      "name": "verify_carrier",
+      "arguments": {
+        "mc_number": "123456"
+      },
+      "result": {
+        "status": "success"
+      }
+    },
+    {
+      "index": 2,
+      "turn": 2,
+      "name": "get_load_context",
+      "arguments": {
+        "load_id": "LOAD-1001"
+      },
+      "result": {
+        "status": "success"
+      }
+    },
+    {
+      "index": 3,
+      "turn": 3,
+      "name": "record_agreement",
+      "arguments": {
+        "agreed_price": 1500,
+        "above_max": false,
+        "carrier_contact_name": "Alex Morgan",
+        "carrier_contact_phone": "+12025550147"
+      },
+      "result": {
+        "status": "success"
+      }
+    },
+    {
+      "index": 4,
+      "turn": 4,
+      "name": "end_call",
+      "arguments": {
+        "reason": "agreement"
+      },
+      "result": {
+        "status": "success"
+      }
+    }
+  ],
+  "findings": [
+    {
+      "check": "load_presentation",
+      "status": "ok",
+      "evidence": "all required details observed"
+    },
+    {
+      "check": "confidential_values",
+      "status": "ok",
+      "evidence": "no internal values observed"
+    },
+    {
+      "check": "confidential_terms",
+      "status": "ok",
+      "evidence": "no forbidden terms observed"
+    },
+    {
+      "check": "tool_sequence",
+      "status": "ok",
+      "evidence": "observed: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']; expected: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']"
+    },
+    {
+      "check": "end_reason",
+      "status": "ok",
+      "evidence": "observed: {'reason': 'agreement'}"
+    },
+    {
+      "check": "function_names_not_spoken",
+      "status": "ok",
+      "evidence": "none spoken"
+    },
+    {
+      "check": "holding_phrase_with_tools",
+      "status": "ok",
+      "evidence": "all tool turns included speech"
+    },
+    {
+      "check": "normal_termination",
+      "status": "ok",
+      "evidence": "termination: end_call"
+    },
+    {
+      "check": "firm_offer_recorded",
+      "status": "ok",
+      "evidence": "record arguments: {'agreed_price': 1500, 'above_max': False, 'carrier_contact_name': 'Alex Morgan', 'carrier_contact_phone': '+12025550147'}"
+    },
+    {
+      "check": "no_upward_counter",
+      "status": "ok",
+      "evidence": "agent rates after firm offer: [1500]"
+    },
+    {
+      "check": "contact_collected",
+      "status": "ok",
+      "evidence": "contact message indices: [7]; record message indices: [8]"
+    }
+  ],
+  "judge_results": [],
+  "median_scores": {},
+  "usage": {}
+}
+
