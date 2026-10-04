@@ -138,7 +138,7 @@ voice-agent/evals/
 ├── checks.py
 ├── judge.py
 ├── scenarios/
-│   └── zone_2_success.yaml
+│   └── zone_2_success.json
 └── tests/
     ├── test_checks.py
     └── test_simulated_tools.py
@@ -153,6 +153,102 @@ Generated result files should go to an ignored output directory rather than bein
 - Judge model defaults to `gpt-5.6-sol`.
 - The initial runner is live-only; replay support is deferred.
 - Maximum turns and request timeouts prevent hanging or uncontrolled spend.
+
+## How to run
+
+The implementation will expose a Python module runnable from `voice-agent/`.
+It will use the existing Python 3.11 environment and OpenAI credential used by
+the voice agent. It will not require either voice service process or the web
+application to be running.
+
+### 1. Install dependencies
+
+From the repository root:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r voice-agent/requirements.txt
+python -m pip install -r voice-agent/tests/requirements-test.txt
+```
+
+Any small evaluation-only dependency introduced during implementation must be
+added to a dedicated requirements file and included in the final command here.
+
+### 2. Configure the live models
+
+```bash
+export OPENAI_API_KEY="<development API key>"
+export EVAL_AGENT_MODEL="gpt-4.1"
+export EVAL_JUDGE_MODEL="gpt-5.6-sol"
+```
+
+`EVAL_AGENT_MODEL` defaults to the model configured in `bot.py`.
+`EVAL_JUDGE_MODEL` defaults to `gpt-5.6-sol`. Model access must be verified
+before the run; an unavailable model is reported as an infrastructure error,
+not as an agent evaluation result.
+
+No Daily, Deepgram, Cartesia, Supabase, Salesforce, Highway, Slack, or carrier
+quote credentials should be set or used by this command.
+
+### 3. Execute the scenario
+
+```bash
+cd voice-agent
+python -m evals.run --scenario zone_2_success --judge-runs 3
+```
+
+Optional output selection:
+
+```bash
+python -m evals.run \
+  --scenario zone_2_success \
+  --judge-runs 3 \
+  --output-dir evals/results/local
+```
+
+The runner performs one agent conversation, then submits the completed
+transcript and tool trace to the judge three times. It does not run the agent
+conversation three times.
+
+### 4. Inspect results
+
+The command prints a compact summary and writes two files:
+
+```text
+evals/results/local/zone_2_success-<run-id>.md
+evals/results/local/zone_2_success-<run-id>.json
+```
+
+The Markdown report is for human review. The JSON report is the canonical
+machine-readable record and contains:
+
+- run and model metadata;
+- the complete synthetic transcript;
+- ordered tool calls and results;
+- each programmatic finding with evidence;
+- all three judge responses;
+- median 1–5 scores; and
+- token usage, latency, and termination reason when available.
+
+Because iteration 1 is diagnostic, behavioral findings do not produce an
+overall pass/fail status and do not cause a nonzero process exit. The command
+returns nonzero only when it cannot complete the evaluation, for example due
+to invalid configuration, unavailable model access, malformed judge output
+after retries, or an internal runner error.
+
+### 5. Run harness tests without live calls
+
+Unit tests for checks and simulated tools must not call an LLM or any external
+service:
+
+```bash
+cd voice-agent
+python -m pytest evals/tests -v --tb=short
+```
+
+This test command validates evaluation infrastructure only. The live command
+above is required to produce behavioral evaluation evidence.
 
 ## Deferred work
 
