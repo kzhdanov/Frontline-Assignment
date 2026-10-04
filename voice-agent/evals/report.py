@@ -19,6 +19,8 @@ def write_reports(result: EvaluationResult, output_dir: Path) -> tuple[Path, Pat
         f"- Run: `{result.run_id}`",
         f"- Agent model: `{result.agent_model}`",
         f"- Judge model: `{result.judge_model}`",
+        f"- Execution mode: `{result.execution_mode}`",
+        f"- Evidence source: `{result.evidence_source}`",
         f"- Termination: `{result.termination_reason}`",
         f"- Duration: `{result.duration_seconds:.2f}s`",
         "",
@@ -26,8 +28,9 @@ def write_reports(result: EvaluationResult, output_dir: Path) -> tuple[Path, Pat
         "",
     ]
     lines.extend(f"- **{item.status.upper()}** `{item.check}` — {item.evidence}" for item in result.findings)
-    lines.extend(["", "## Median judge scores", ""])
-    lines.extend(f"- `{name}`: {score:g}/5" for name, score in result.median_scores.items())
+    if result.median_scores:
+        lines.extend(["", "## Median judge scores", ""])
+        lines.extend(f"- `{name}`: {score:g}/5" for name, score in result.median_scores.items())
     lines.extend(["", "## Transcript", ""])
     for index, message in enumerate(result.messages):
         if message.get("role") in {"user", "assistant"}:
@@ -36,14 +39,14 @@ def write_reports(result: EvaluationResult, output_dir: Path) -> tuple[Path, Pat
     lines.extend(["## Tool trace", ""])
     for event in result.tool_events:
         lines.append(f"- `{event.index}` `{event.name}` args={json.dumps(event.arguments, sort_keys=True)} result={json.dumps(event.result, sort_keys=True)}")
-    lines.extend(["", "## Judge runs", ""])
-    for judge in result.judge_results:
-        lines.append(f"### Run {judge.run}")
-        lines.append("")
-        for score in judge.scores:
-            lines.append(f"- `{score.criterion}`: {score.score}/5 — {score.evidence}")
-        lines.append(f"- Summary: {judge.summary}")
-        lines.append("")
+    if result.judge_results:
+        lines.extend(["", "## Judge runs", ""])
+        for judge in result.judge_results:
+            lines.append(f"### Run {judge.run}")
+            lines.append("")
+            for score in judge.scores:
+                lines.append(f"- `{score.criterion}`: {score.score}/5 — {score.evidence}")
+            lines.append(f"- Summary: {judge.summary}")
+            lines.append("")
     markdown_path.write_text("\n".join(lines), encoding="utf-8")
     return markdown_path, json_path
-

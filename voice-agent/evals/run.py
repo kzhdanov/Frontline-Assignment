@@ -12,6 +12,7 @@ from .checks import evaluate_checks
 from .conversation import run_conversation
 from .judge import run_judges
 from .models import EvaluationResult
+from .offline import load_reference_trace
 from .openai_client import ModelError, OpenAIChatClient
 from .report import write_reports
 from .scenario import load_scenario
@@ -20,6 +21,7 @@ from .scenario import load_scenario
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a safe text evaluation of the voice agent")
     parser.add_argument("--scenario", default="zone_2_success")
+    parser.add_argument("--mode", choices=("offline", "live"), default="offline")
     parser.add_argument("--judge-runs", type=int, default=3)
     parser.add_argument("--output-dir", type=Path, default=Path("evals/results/local"))
     parser.add_argument("--agent-model", default=os.getenv("EVAL_AGENT_MODEL", "gpt-4.1"))
@@ -36,12 +38,21 @@ def main(argv: list[str] | None = None) -> int:
     started_at = datetime.now(timezone.utc).isoformat()
     try:
         scenario = load_scenario(args.scenario)
-        client = OpenAIChatClient()
-        messages, simulator, termination, agent_usage = run_conversation(scenario, client, args.agent_model)
-        findings = evaluate_checks(scenario, messages, simulator.events, termination)
-        judge_results, medians, judge_usage = run_judges(
-            client, args.judge_model, scenario, messages, simulator.events, args.judge_runs
-        )
+        if args.mode == "offline":
+            messages, events, termination, evidence_source = load_reference_trace(scenario.name)
+            agent_usage: dict[str, int] = {}
+            judge_usage: dict[str, int] = {}
+            judge_results = []
+            medians = {}
+        else:
+            client = OpenAIChatClient()
+            messages, simulator, termination, agent_usage = run_conversation(scenario, client, args.agent_model)
+            events = simulator.events
+            evidence_source = "live_model_conversation"
+            judge_results, medians, judge_usage = run_judges(
+                client, args.judge_model, scenario, messages, events, args.judge_runs
+            )
+        findings = evaluate_checks(scenario, messages, events, termination)
     except (ValueError, ModelError) as exc:
         print(f"evaluation infrastructure error: {exc}", file=sys.stderr)
         return 2
@@ -57,17 +68,20 @@ def main(argv: list[str] | None = None) -> int:
         termination_reason=termination,
         duration_seconds=time.monotonic() - started,
         messages=messages,
-        tool_events=simulator.events,
+        tool_events=events,
         findings=findings,
         judge_results=judge_results,
         median_scores=medians,
         usage=usage,
+        execution_mode=args.mode,
+        evidence_source=evidence_source,
     )
     markdown, json_path = write_reports(result, args.output_dir)
     print(f"Evaluation complete: {scenario.name}")
     print(f"Programmatic findings: {sum(f.status == 'ok' for f in findings)} ok, {sum(f.status != 'ok' for f in findings)} violations")
-    for criterion, score in medians.items():
-        print(f"  {criterion}: {score:g}/5")
+    if medians:
+        for criterion, score in medians.items():
+            print(f"  {criterion}: {score:g}/5")
     print(f"Report: {markdown}")
     print(f"JSON: {json_path}")
     return 0
@@ -75,4 +89,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

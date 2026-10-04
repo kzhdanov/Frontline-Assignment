@@ -41,6 +41,8 @@ class EvaluationResult:
     started_at: str
     agent_model: str
     judge_model: str
+    execution_mode: str
+    evidence_source: str
     termination_reason: str
     duration_seconds: float
     messages: list[dict[str, Any]]
@@ -52,4 +54,3 @@ class EvaluationResult:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-

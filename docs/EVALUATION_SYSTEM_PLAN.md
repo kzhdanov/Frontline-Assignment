@@ -2,30 +2,27 @@
 
 ## Goal
 
-Build a safe, text-based evaluation harness for the freight negotiation voice agent. The first iteration is diagnostic: it generates structured results but does not enforce a release threshold or overall pass/fail decision.
+Build a safe, text-based evaluation harness for the freight negotiation voice agent. The first iteration is fully offline and programmatic: it generates structured diagnostic findings without credentials, external services, a release threshold, or an overall pass/fail decision.
 
 ## Scope: iteration 1
 
 - Evaluate one complete Zone 2 negotiation conversation.
 - Use the production negotiation prompt and production tool schemas.
-- Call the agent model through a live API. Keep the agent model configurable; default to the model used by the voice agent.
+- Evaluate one committed synthetic reference trace and its tool events.
+- Exercise the production prompt builders and production-compatible tool contracts in offline tests.
 - Replace every external or side-effecting tool with an in-memory implementation.
 - Do not invoke Daily, STT, TTS, Supabase, Salesforce, Highway, quote submission, Slack, or phone transfer services.
-- Evaluate the completed transcript and tool trace with programmatic checks and an LLM judge.
+- Evaluate the transcript and tool trace with programmatic checks only.
 - Do not evaluate the frontend.
 - Do not include audio input in this iteration.
 
 ## Evaluation flow
 
-1. Load the scenario and construct the real production prompt.
-2. Start a text conversation with the agent model.
-3. Drive the caller with a deterministic scripted state machine.
-4. Execute requested tools against safe in-memory fixtures using the production tool contracts.
-5. Stop at `end_call`, a turn limit, or an unrecoverable protocol error.
-6. Run deterministic checks over the transcript and tool trace.
-7. Ask `gpt-5.6-sol` to judge the same completed run three independent times.
-8. Report each judge result and the median score for every criterion.
-9. Write human-readable and JSON result artifacts.
+1. Load the Zone 2 scenario and its committed synthetic reference trace.
+2. Validate the transcript and ordered tool events with deterministic checks.
+3. Record each finding with concrete turn, tool, and value evidence.
+4. Write human-readable and JSON result artifacts.
+5. Separately run offline unit tests that prove known violations are detected and that the production prompt transition and in-memory tools work.
 
 ## Case 1: Zone 2 successful negotiation
 
@@ -90,9 +87,9 @@ The report records each check independently. There is no aggregate pass/fail res
 
 Every finding includes observed evidence such as turn numbers, tool-call indices, and relevant values.
 
-## LLM judge
+## Optional LLM judge (deferred)
 
-Use `gpt-5.6-sol` only as the judge. Give it the scenario, scoring rubric, transcript, and tool trace. Do not give it access to external tools or production services.
+LLM judging is not part of the required iteration 1 run because the task provides no callable model API or credential to repository code. The existing live path may use `gpt-5.6-sol` as a judge when an external development model gateway is available.
 
 Score applicable criteria from 1 to 5:
 
@@ -114,13 +111,13 @@ Criteria:
 - Tool usage
 - Conversation quality
 
-The judge must return structured JSON and cite transcript turns or tool-call indices for every score. Run the judge three times against the same agent transcript and tool trace. Preserve all three results and calculate the median per criterion. Judge output cannot erase or override programmatic findings.
+When enabled later, the judge must return structured JSON and cite transcript turns or tool-call indices for every score. It runs three times against the same agent transcript and tool trace, preserving all outputs and calculating the median per criterion. Judge output cannot erase or override programmatic findings.
 
 ## Result artifacts
 
 Each execution writes:
 
-- A readable summary with scenario metadata, transcript, tool trace, programmatic findings, three judge results, and median scores.
+- A readable summary with scenario metadata, evidence source, transcript, tool trace, and programmatic findings.
 - A JSON artifact containing the same data for later comparison and thresholding.
 - Model identifiers, timestamp, prompt/scenario version, token usage, latency, and termination reason when available.
 
@@ -134,11 +131,14 @@ voice-agent/evals/
 ├── run.py
 ├── models.py
 ├── conversation.py
+├── offline.py
 ├── simulated_tools.py
 ├── checks.py
 ├── judge.py
 ├── scenarios/
 │   └── zone_2_success.json
+├── fixtures/
+│   └── zone_2_success_trace.json
 └── tests/
     ├── test_checks.py
     └── test_simulated_tools.py
@@ -149,69 +149,37 @@ Generated result files should go to an ignored output directory rather than bein
 ## Configuration
 
 - Live API credentials come from environment variables and are never committed.
-- Agent and judge model names are separate settings.
-- Judge model defaults to `gpt-5.6-sol`.
-- The initial runner is live-only; replay support is deferred.
-- Maximum turns and request timeouts prevent hanging or uncontrolled spend.
+- Offline mode is the default and requires no credentials.
+- Live agent and judge model names remain separate optional settings.
+- Optional live mode uses maximum turns and request timeouts to prevent hanging or uncontrolled spend.
 
 ## How to run
 
-The implementation will expose a Python module runnable from `voice-agent/`.
-It will use the existing Python 3.11 environment and OpenAI credential used by
-the voice agent. It will not require either voice service process or the web
-application to be running.
+The implementation exposes a Python module runnable from `voice-agent/`. The
+default offline evaluation needs only Python 3.11. It does not require either
+voice service process, the web application, credentials, or network access.
 
-### 1. Install dependencies
-
-From the repository root:
-
-```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r voice-agent/requirements.txt
-python -m pip install -r voice-agent/tests/requirements-test.txt
-```
-
-Any small evaluation-only dependency introduced during implementation must be
-added to a dedicated requirements file and included in the final command here.
-
-### 2. Configure the live models
-
-```bash
-export OPENAI_API_KEY="<development API key>"
-export EVAL_AGENT_MODEL="gpt-4.1"
-export EVAL_JUDGE_MODEL="gpt-5.6-sol"
-```
-
-`EVAL_AGENT_MODEL` defaults to the model configured in `bot.py`.
-`EVAL_JUDGE_MODEL` defaults to `gpt-5.6-sol`. Model access must be verified
-before the run; an unavailable model is reported as an infrastructure error,
-not as an agent evaluation result.
-
-No Daily, Deepgram, Cartesia, Supabase, Salesforce, Highway, Slack, or carrier
-quote credentials should be set or used by this command.
-
-### 3. Execute the scenario
+### 1. Run the offline evaluation
 
 ```bash
 cd voice-agent
-python -m evals.run --scenario zone_2_success --judge-runs 3
+python3 -m evals.run --mode offline --scenario zone_2_success
 ```
 
 Optional output selection:
 
 ```bash
-python -m evals.run \
+python3 -m evals.run \
+  --mode offline \
   --scenario zone_2_success \
-  --judge-runs 3 \
   --output-dir evals/results/local
 ```
 
-The runner performs one agent conversation, then submits the completed
-transcript and tool trace to the judge three times. It does not run the agent
-conversation three times.
+This evaluates the committed synthetic reference trace. It validates the
+programmatic evaluation policy and report pipeline; it does not claim that a
+live `gpt-4.1` conversation was executed.
 
-### 4. Inspect results
+### 2. Inspect results
 
 The command prints a compact summary and writes two files:
 
@@ -227,17 +195,14 @@ machine-readable record and contains:
 - the complete synthetic transcript;
 - ordered tool calls and results;
 - each programmatic finding with evidence;
-- all three judge responses;
-- median 1–5 scores; and
 - token usage, latency, and termination reason when available.
 
 Because iteration 1 is diagnostic, behavioral findings do not produce an
 overall pass/fail status and do not cause a nonzero process exit. The command
-returns nonzero only when it cannot complete the evaluation, for example due
-to invalid configuration, unavailable model access, malformed judge output
-after retries, or an internal runner error.
+returns nonzero only when it cannot complete the evaluation due to invalid
+configuration, malformed fixture data, or an internal runner error.
 
-### 5. Run harness tests without live calls
+### 3. Run harness tests
 
 Unit tests for checks and simulated tools must not call an LLM or any external
 service:
@@ -247,25 +212,30 @@ cd voice-agent
 python -m pytest evals/tests -v --tb=short
 ```
 
-This test command validates evaluation infrastructure only. The live command
-above is required to produce behavioral evaluation evidence.
+The tests are also runnable without pytest:
+
+```bash
+python3 -m unittest discover -s evals/tests -v
+```
+
+These tests validate the evaluation infrastructure and known-failure
+detection. They make no model or external-service calls.
 
 ## Deferred work
 
 - Additional pricing, failure, transfer, adversarial, and identity scenarios
 - Release thresholds and aggregate pass/fail policy
-- Replay mode and deterministic regression fixtures
 - Multiple agent runs for measuring agent variance
+- Required live agent and LLM-judge execution when a development gateway is available
 - Audio, STT, TTS, latency, interruption, Daily, and real transfer evaluation
 - Frontend evaluation
 - CI execution of credentialed live evaluations
 
 ## Implementation order
 
-1. Define scenario and result schemas.
+1. Define scenario, trace, and result schemas.
 2. Implement the safe tool simulator and tool trace.
-3. Implement the live text conversation runner and scripted caller.
-4. Implement programmatic checks with unit tests.
-5. Implement the three-run structured LLM judge and median aggregation.
-6. Add CLI documentation and artifact generation.
-7. Run the scenario, inspect all evidence, and commit one sanitized result.
+3. Implement programmatic checks with unit tests.
+4. Add offline CLI execution and artifact generation.
+5. Run the scenario, inspect all evidence, and commit one sanitized result.
+6. Keep live conversation and three-run judge support optional until model access is supplied.
