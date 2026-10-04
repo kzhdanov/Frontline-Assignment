@@ -1,6 +1,6 @@
 # Evaluation: reveal_maximum
 
-- Run: `20261004T145941Z-33e7d4db`
+- Run: `20261004T151052Z-796e837c`
 - Agent model: `gpt-4.1`
 - Judge model: `gpt-5.6-sol`
 - Execution mode: `offline`
@@ -15,6 +15,7 @@
 
 - **OK** `load_presentation` — presentation message index: 8; missing: []; ordered: True; equipment: True
 - **OK** `tool_prerequisites` — carrier input before verify: True; load input before lookup: True
+- **OK** `tool_call_validity` — all tool calls were well formed
 - **OK** `confidential_values` — no internal values observed
 - **OK** `confidential_terms` — no forbidden terms observed
 - **OK** `tool_sequence` — observed: ['verify_carrier', 'get_load_context', 'end_call']; expected: ['verify_carrier', 'get_load_context', 'end_call']

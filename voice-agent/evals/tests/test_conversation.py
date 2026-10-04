@@ -2,8 +2,11 @@ import json
 import unittest
 
 from evals.conversation import run_conversation
+from evals.caller import Zone2Caller
+from evals.checks import evaluate_checks
 from evals.openai_client import ModelResponse
 from evals.scenario import load_scenario
+from evals.trace import derive_tool_events
 
 
 def _text(content):
@@ -64,3 +67,30 @@ class ConversationTests(unittest.TestCase):
         self.assertIn("CONFIDENTIAL PRICING", client.system_prompts[-1])
         self.assertTrue(any(message.get("role") == "user" and "Alex Morgan" in message.get("content", "") for message in messages))
 
+    def test_malformed_live_tool_arguments_remain_scoreable(self):
+        scenario = load_scenario("zone_2_success")
+        malformed = ModelResponse({
+            "role": "assistant", "content": "Let me check that.",
+            "tool_calls": [{"type": "function", "function": {
+                "name": "verify_carrier", "arguments": "{not-json",
+            }}],
+        }, {})
+        client = FakeClient([malformed, _tool("end", "end_call", {"reason": "error"})])
+        messages, tools, termination, _usage = run_conversation(scenario, client, "test-agent")
+        self.assertEqual(termination, "end_call")
+        self.assertIn("_malformed_arguments", tools.events[0].arguments)
+        self.assertTrue(messages[1]["tool_calls"][0]["id"].startswith("eval-"))
+        findings = {item.check: item for item in evaluate_checks(
+            scenario, messages, derive_tool_events(messages), termination
+        )}
+        self.assertEqual(findings["tool_call_validity"].status, "violation")
+
+    def test_caller_does_not_advance_on_unrecognized_response(self):
+        scenario = load_scenario("zone_2_success")
+        caller = Zone2Caller(scenario)
+        first = caller.next_message(assistant_text="Here are the load details.", carrier_verified=True, load_loaded=True)
+        retry = caller.next_message(assistant_text="Can you clarify?", carrier_verified=True, load_loaded=True)
+        counter = caller.next_message(assistant_text="I can offer $1,500.", carrier_verified=True, load_loaded=True)
+        self.assertIn("$1,800", first)
+        self.assertEqual(retry, "Could you repeat that for me?")
+        self.assertIn("still need $1,800", counter)

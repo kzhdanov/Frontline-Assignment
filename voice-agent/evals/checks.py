@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from .amounts import extract_rate_amounts
 from .models import Finding, ToolEvent
 from .scenario import Scenario
 
@@ -17,6 +18,13 @@ def _assistant_turns(messages: list[dict[str, Any]]) -> list[tuple[int, str]]:
 
 def _finding(check: str, ok: bool, evidence: str) -> Finding:
     return Finding(check=check, status="ok" if ok else "violation", evidence=evidence)
+
+
+def _numeric_equal(observed: Any, expected: Any) -> bool:
+    try:
+        return float(observed) == float(expected)
+    except (TypeError, ValueError):
+        return False
 
 
 _ONES = ("", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen")
@@ -106,6 +114,15 @@ def _tool_message_indices(messages: list[dict[str, Any]], name: str) -> list[int
     ]
 
 
+def _tool_call_validity_finding(events: list[ToolEvent]) -> Finding:
+    invalid = [
+        {"index": event.index, "name": event.name, "arguments": event.arguments}
+        for event in events
+        if not event.name or "_malformed_arguments" in event.arguments
+    ]
+    return _finding("tool_call_validity", not invalid, "all tool calls were well formed" if not invalid else f"invalid tool calls: {invalid}")
+
+
 def _common_findings(
     scenario: Scenario,
     messages: list[dict[str, Any]],
@@ -129,6 +146,7 @@ def _common_findings(
     return [
         _load_presentation_finding(scenario, messages),
         _tool_prerequisite_finding(scenario, messages),
+        _tool_call_validity_finding(events),
         _finding("confidential_values", not leaked, "no internal values observed" if not leaked else f"spoken internal values: {', '.join(leaked)}"),
         _finding("confidential_terms", not forbidden, "no forbidden terms observed" if not forbidden else f"spoken terms: {', '.join(forbidden)}"),
         _finding("tool_sequence", sequence == expected_sequence, f"observed: {sequence}; expected: {expected_sequence}"),
@@ -156,14 +174,14 @@ def _evaluate_zone_1(scenario: Scenario, messages: list[dict[str, Any]], events:
     args = records[0].arguments if records else {}
     correct = (
         len(records) == 1
-        and float(args.get("agreed_price", -1)) == float(expected["record"]["agreed_price"])
+        and _numeric_equal(args.get("agreed_price"), expected["record"]["agreed_price"])
         and args.get("above_max", False) is expected["record"]["above_max"]
     )
     findings.append(_finding("firm_offer_recorded", correct, f"record arguments: {args}"))
     user_offer_index = next((i for i, m in enumerate(messages) if m.get("role") == "user" and "final" in str(m.get("content", "")).lower()), -1)
     record_index = min(_tool_message_indices(messages, "record_agreement") or [len(messages)])
     between = "\n".join(str(m.get("content") or "") for i, m in enumerate(messages) if user_offer_index < i < record_index and m.get("role") == "assistant")
-    rates = [int(value) for value in re.findall(r"\$\s*([1-9][0-9]{3})\b", between.replace(",", ""))]
+    rates = extract_rate_amounts(between)
     findings.append(_finding("no_upward_counter", all(rate <= scenario.carrier_offer for rate in rates), f"agent rates after firm offer: {rates}"))
     contact_ok, evidence = _contact_before_record(scenario, messages)
     findings.append(_finding("contact_collected", contact_ok, evidence))
@@ -177,12 +195,12 @@ def _evaluate_zone_3(scenario: Scenario, messages: list[dict[str, Any]], events:
     args = records[0].arguments if records else {}
     correct = (
         len(records) == 1
-        and float(args.get("agreed_price", -1)) == float(expected["record"]["agreed_price"])
+        and _numeric_equal(args.get("agreed_price"), expected["record"]["agreed_price"])
         and args.get("above_max") is expected["record"]["above_max"]
     )
     findings.append(_finding("above_max_bid_recorded", correct, f"record arguments: {args}"))
     agent_text = "\n".join(text for _, text in _assistant_turns(messages)).replace(",", "")
-    rates = [int(value) for value in re.findall(r"\$\s*([1-9][0-9]{3})\b", agent_text)]
+    rates = extract_rate_amounts(agent_text)
     offered_above = [rate for rate in rates if rate > int(scenario.load["maxRate"])]
     findings.append(_finding("never_offered_above_ceiling", not offered_above, f"agent dollar amounts: {rates}"))
     contact_ok, evidence = _contact_before_record(scenario, messages)
@@ -225,6 +243,7 @@ def evaluate_checks(
 
     findings.append(_load_presentation_finding(scenario, messages))
     findings.append(_tool_prerequisite_finding(scenario, messages))
+    findings.append(_tool_call_validity_finding(events))
 
     leaked = _confidential_value_hits(agent_text, [int(load["bookNowRate"]), int(load["maxRate"])])
     findings.append(_finding("confidential_values", not leaked, "no internal values observed" if not leaked else f"spoken internal values: {', '.join(leaked)}"))
@@ -241,7 +260,7 @@ def evaluate_checks(
     if agreement_events:
         args = agreement_events[0].arguments
         expected_record = scenario.expectations["record"]
-        price_ok = float(args.get("agreed_price", -1)) == float(expected_record["agreed_price"])
+        price_ok = _numeric_equal(args.get("agreed_price"), expected_record["agreed_price"])
         above_ok = args.get("above_max", False) is expected_record["above_max"]
         contact_ok = (
             str(args.get("carrier_contact_name", "")).lower() == scenario.contact["name"].lower()
@@ -278,14 +297,13 @@ def evaluate_checks(
     names_spoken = [name for name in ("verify_carrier", "get_load_context", "record_agreement", "end_call", "transfer_to_human") if name in agent_text]
     findings.append(_finding("function_names_not_spoken", not names_spoken, "none spoken" if not names_spoken else f"spoken names: {names_spoken}"))
 
-    rate_pattern = re.compile(r"\$\s*([1-9][0-9]{3})\b")
-    mentioned = [int(value) for value in rate_pattern.findall(normalized)]
+    mentioned = extract_rate_amounts(agent_text)
     above_ceiling = [value for value in mentioned if value > int(load["maxRate"])]
     findings.append(_finding("ceiling_compliance", not above_ceiling, f"numeric amounts observed: {mentioned}"))
 
     # A valid Zone 2 run should not persist the initial carrier offer.
     accepted_initial = any(
-        float(event.arguments.get("agreed_price", -1)) == float(scenario.carrier_offer)
+        _numeric_equal(event.arguments.get("agreed_price"), scenario.carrier_offer)
         for event in agreement_events
     )
     findings.append(_finding("initial_offer_not_immediately_accepted", not accepted_initial, f"carrier initial offer: {scenario.carrier_offer}"))
@@ -304,7 +322,7 @@ def evaluate_checks(
     ).replace(",", "")
     # Counteroffer arithmetic only uses explicitly dollar-marked amounts so a
     # load reference such as LOAD-1001 cannot be misclassified as a rate.
-    agent_rates = [int(value) for value in re.findall(r"\$\s*([1-9][0-9]{3})\b", negotiation_text)]
+    agent_rates = extract_rate_amounts(negotiation_text)
     excluded = {int(load["startRate"]), int(load["bookNowRate"]), int(load["maxRate"]), int(scenario.settlement_offer)}
     counters = []
     for rate in agent_rates:

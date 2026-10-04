@@ -1,6 +1,6 @@
 # Evaluation: zone_1_firm_offer
 
-- Run: `20261004T145941Z-7bb299b9`
+- Run: `20261004T151052Z-73c59a9b`
 - Agent model: `gpt-4.1`
 - Judge model: `gpt-5.6-sol`
 - Execution mode: `offline`
@@ -15,6 +15,7 @@
 
 - **OK** `load_presentation` — presentation message index: 8; missing: []; ordered: True; equipment: True
 - **OK** `tool_prerequisites` — carrier input before verify: True; load input before lookup: True
+- **OK** `tool_call_validity` — all tool calls were well formed
 - **OK** `confidential_values` — no internal values observed
 - **OK** `confidential_terms` — no forbidden terms observed
 - **OK** `tool_sequence` — observed: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']; expected: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']

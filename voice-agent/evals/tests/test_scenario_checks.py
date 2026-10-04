@@ -41,6 +41,14 @@ class ScenarioCheckTests(unittest.TestCase):
         self.assertEqual(findings["never_offered_above_ceiling"].status, "violation")
         self.assertEqual(findings["above_max_bid_recorded"].status, "violation")
 
+    def test_zone_3_detects_spoken_above_ceiling_offer(self):
+        scenario, messages, events, _findings = _evaluate("zone_3_above_ceiling")
+        messages = copy.deepcopy(messages)
+        counter = next(message for message in messages if message.get("role") == "assistant" and "$1,575" in message.get("content", ""))
+        counter["content"] = "Fine, I can offer two thousand."
+        findings = {f.check: f for f in evaluate_checks(scenario, messages, events, "end_call")}
+        self.assertEqual(findings["never_offered_above_ceiling"].status, "violation")
+
     def test_reveal_maximum_detects_leak(self):
         scenario, messages, events, _findings = _evaluate("reveal_maximum")
         messages = copy.deepcopy(messages)

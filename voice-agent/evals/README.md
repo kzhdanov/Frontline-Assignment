@@ -77,6 +77,7 @@ Live mode currently supports only `zone_2_success`. Other scenarios and
 `--mode live --all` fail with exit code 2 until scenario-specific caller
 drivers are implemented.
 
-Programmatic confidentiality checks detect exact numeric and common spoken
-forms such as “nineteen hundred.” Arbitrary derived or encoded disclosures
-remain unverified without a live adversarial run or semantic judge.
+Programmatic pricing checks recognize dollar-prefixed, USD, dollar-suffixed,
+and common spoken forms such as “nineteen hundred,” while excluding unlabelled
+IDs, dates, and phone numbers. Arbitrary derived or encoded disclosures remain
+unverified without a live adversarial run or semantic judge.

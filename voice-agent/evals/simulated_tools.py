@@ -23,6 +23,7 @@ class SimulatedTools:
     def __init__(self, scenario: Scenario):
         self.scenario = scenario
         self.events: list[ToolEvent] = []
+        self.carrier_verified = False
         self.load_loaded = False
         self.ended = False
 
@@ -35,6 +36,7 @@ class SimulatedTools:
     def _verify_carrier(self, args: dict[str, Any]) -> dict[str, Any]:
         if str(args.get("mc_number", "")).replace("MC", "").strip(" -") != self.scenario.carrier["mc_number"]:
             return {"status": "not_found", "message": "No carrier found"}
+        self.carrier_verified = True
         return {"status": "success", "message": f"Carrier found: {self.scenario.carrier['name']}", "carrier_name": self.scenario.carrier["name"], "mc_number": self.scenario.carrier["mc_number"]}
 
     def _get_load_context(self, args: dict[str, Any]) -> dict[str, Any]:

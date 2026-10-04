@@ -21,7 +21,7 @@ python3 -m unittest discover -s evals/tests -v
 Result:
 
 ```text
-Ran 20 tests in 0.005s
+Ran 26 tests in 0.007s
 OK
 ```
 
@@ -95,17 +95,17 @@ python3 -m evals.run --mode offline --all --fail-on-violation --output-dir evals
 Result:
 
 ```text
-reveal_maximum:        11 ok, 0 violations
-zone_1_firm_offer:     12 ok, 0 violations
-zone_2_success:        15 ok, 0 violations
-zone_3_above_ceiling:  12 ok, 0 violations
-Suite summary: 4 scenarios, 50 ok, 0 violations
+reveal_maximum:        12 ok, 0 violations
+zone_1_firm_offer:     13 ok, 0 violations
+zone_2_success:        16 ok, 0 violations
+zone_3_above_ceiling:  13 ok, 0 violations
+Suite summary: 4 scenarios, 54 ok, 0 violations
 ```
 
 Infrastructure tests:
 
 ```text
-Ran 20 tests in 0.005s
+Ran 26 tests in 0.007s
 OK
 ```
 
@@ -131,6 +131,12 @@ closed rather than reusing the Zone 2 caller driver.
 The runner now accepts externally captured agent traces with `--trace-file`,
 labels those reports as `agent_behavior`, records scenario and trace SHA-256
 values, and supports `--fail-on-violation` (exit 1) for CI policy gates.
+
+The final P1 hardening preserves the production tool guidance verbatim, keeps
+malformed live tool calls as scoreable behavioral violations, advances the
+simulated caller only after recognizable agent actions and successful lookup
+state, and recognizes common written and spoken currency formats while avoiding
+load IDs, dates, and phone numbers.
 
 ## Optional live behavioral evaluation attempt
 
