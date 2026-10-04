@@ -1,6 +1,6 @@
 # Evaluation: zone_1_firm_offer
 
-- Run: `20261004T143254Z-f1504460`
+- Run: `20261004T144451Z-94294fba`
 - Agent model: `gpt-4.1`
 - Judge model: `gpt-5.6-sol`
 - Execution mode: `offline`
@@ -10,7 +10,8 @@
 
 ## Programmatic findings
 
-- **OK** `load_presentation` — all required details observed
+- **OK** `load_presentation` — presentation message index: 8; missing: []; ordered: True; equipment: True
+- **OK** `tool_prerequisites` — carrier input before verify: True; load input before lookup: True
 - **OK** `confidential_values` — no internal values observed
 - **OK** `confidential_terms` — no forbidden terms observed
 - **OK** `tool_sequence` — observed: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']; expected: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']
@@ -20,25 +21,33 @@
 - **OK** `normal_termination` — termination: end_call
 - **OK** `firm_offer_recorded` — record arguments: {'agreed_price': 1500, 'above_max': False, 'carrier_contact_name': 'Alex Morgan', 'carrier_contact_phone': '+12025550147'}
 - **OK** `no_upward_counter` — agent rates after firm offer: [1500]
-- **OK** `contact_collected` — contact message indices: [7]; record message indices: [8]
+- **OK** `contact_collected` — contact message indices: [11]; record message indices: [12]
 
 ## Transcript
 
-**Turn 0 — assistant**: Let me verify that.
+**Turn 0 — assistant**: Thanks for calling KCH. May I have your MC number?
 
-**Turn 2 — assistant**: Let me confirm the load.
+**Turn 1 — user**: My MC number is 123456.
 
-**Turn 4 — assistant**: I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th at 9 AM, with delivery in Chicago, Illinois by October 7th at 3 PM. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?
+**Turn 2 — assistant**: Let me verify that.
 
-**Turn 5 — user**: My final price is $1,500. I can't go any lower.
+**Turn 4 — assistant**: Thanks. What load reference are you calling about?
 
-**Turn 6 — assistant**: Alright, $1,500 works. Can I get your contact name and phone number?
+**Turn 5 — user**: LOAD-1001.
 
-**Turn 7 — user**: Alex Morgan, +12025550147.
+**Turn 6 — assistant**: Let me confirm the load.
 
-**Turn 8 — assistant**: Perfect.
+**Turn 8 — assistant**: I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th, 2026 at 9 AM, with delivery in Chicago, Illinois by October 7th, 2026 at 3 PM. This is a Dry Van. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?
 
-**Turn 10 — assistant**: I'll send the confirmation right over.
+**Turn 9 — user**: My final price is $1,500. I can't go any lower.
+
+**Turn 10 — assistant**: Alright, $1,500 works. Can I get your contact name and phone number?
+
+**Turn 11 — user**: Alex Morgan, +12025550147.
+
+**Turn 12 — assistant**: Perfect.
+
+**Turn 14 — assistant**: I'll send the confirmation right over.
 
 ## Tool trace
 

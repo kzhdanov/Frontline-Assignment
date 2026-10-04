@@ -19,6 +19,85 @@ def _finding(check: str, ok: bool, evidence: str) -> Finding:
     return Finding(check=check, status="ok" if ok else "violation", evidence=evidence)
 
 
+_ONES = ("", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen")
+_TENS = ("", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety")
+
+
+def _number_words(value: int) -> str:
+    if value < 20:
+        return _ONES[value]
+    if value < 100:
+        return " ".join(part for part in (_TENS[value // 10], _ONES[value % 10]) if part)
+    if value < 1000:
+        return " ".join(part for part in (_ONES[value // 100], "hundred", _number_words(value % 100)) if part)
+    if value < 10000:
+        return " ".join(part for part in (_ONES[value // 1000], "thousand", _number_words(value % 1000)) if part)
+    return str(value)
+
+
+def _confidential_value_hits(text: str, values: list[int]) -> list[str]:
+    normalized = re.sub(r"[^a-z0-9\s]", " ", text.lower())
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    compact_numeric = text.replace(",", "")
+    hits: list[str] = []
+    for value in values:
+        variants = {_number_words(value)}
+        if value % 100 == 0 and value >= 1000:
+            variants.add(f"{_number_words(value // 100)} hundred")
+        if str(value) in compact_numeric or any(re.search(rf"\b{re.escape(variant)}\b", normalized) for variant in variants):
+            hits.append(str(value))
+    return hits
+
+
+def _first_load_presentation(messages: list[dict[str, Any]]) -> tuple[int, str]:
+    tool_indices = _tool_message_indices(messages, "get_load_context")
+    if not tool_indices:
+        return -1, ""
+    for index in range(tool_indices[0] + 1, len(messages)):
+        message = messages[index]
+        if message.get("role") == "assistant" and not message.get("tool_calls"):
+            return index, str(message.get("content") or "")
+    return -1, ""
+
+
+def _load_presentation_finding(scenario: Scenario, messages: list[dict[str, Any]]) -> Finding:
+    index, presentation = _first_load_presentation(messages)
+    normalized = presentation.lower().replace(",", "")
+    load = scenario.load
+    ordered = [
+        ("load reference", str(load["id"])),
+        ("origin", str(load["origin"]["city"])),
+        ("pickup time", str(load["pickupTime"])),
+        ("destination", str(load["destination"]["city"])),
+        ("dropoff time", str(load["dropoffTime"])),
+        ("requirement", str(load["specialInstructions"])),
+        ("opening offer", str(load["startRate"])),
+    ]
+    positions = [(label, normalized.find(value.lower().replace(",", ""))) for label, value in ordered]
+    equipment_present = str(load.get("equipment", "")).lower() in normalized
+    missing = [label for label, position in positions if position < 0]
+    in_order = not missing and [position for _, position in positions] == sorted(position for _, position in positions)
+    ok = index >= 0 and not missing and in_order and equipment_present
+    evidence = f"presentation message index: {index}; missing: {missing}; ordered: {in_order}; equipment: {equipment_present}"
+    return _finding("load_presentation", ok, evidence)
+
+
+def _tool_prerequisite_finding(scenario: Scenario, messages: list[dict[str, Any]]) -> Finding:
+    verify_indices = _tool_message_indices(messages, "verify_carrier")
+    load_indices = _tool_message_indices(messages, "get_load_context")
+    mc = scenario.carrier["mc_number"]
+    load_id = scenario.load["id"].lower()
+    verify_ok = bool(verify_indices) and any(
+        message.get("role") == "user" and mc in str(message.get("content", ""))
+        for message in messages[:verify_indices[0]]
+    )
+    load_ok = bool(load_indices) and any(
+        message.get("role") == "user" and load_id in str(message.get("content", "")).lower()
+        for message in messages[:load_indices[0]]
+    )
+    return _finding("tool_prerequisites", verify_ok and load_ok, f"carrier input before verify: {verify_ok}; load input before lookup: {load_ok}")
+
+
 def _tool_message_indices(messages: list[dict[str, Any]], name: str) -> list[int]:
     return [
         index for index, message in enumerate(messages)
@@ -38,15 +117,7 @@ def _common_findings(
     agent_text = "\n".join(text for _, text in _assistant_turns(messages))
     normalized = agent_text.lower().replace(",", "")
     load = scenario.load
-    required = {
-        "load reference": str(load["id"]),
-        "origin": str(load["origin"]["city"]),
-        "destination": str(load["destination"]["city"]),
-        "requirement": str(load["specialInstructions"]),
-        "opening offer": str(load["startRate"]),
-    }
-    missing = [label for label, value in required.items() if value.lower().replace(",", "") not in normalized]
-    leaked = [str(load[key]) for key in ("bookNowRate", "maxRate") if str(load[key]) in normalized]
+    leaked = _confidential_value_hits(agent_text, [int(load["bookNowRate"]), int(load["maxRate"])])
     forbidden = [term for term in ("target rate", "max rate", "maximum rate", "our maximum", "internal ceiling", "budget") if term in normalized]
     sequence = [event.name for event in events]
     end_events = [event for event in events if event.name == "end_call"]
@@ -56,7 +127,8 @@ def _common_findings(
         if message.get("role") == "assistant" and message.get("tool_calls") and not str(message.get("content") or "").strip()
     ]
     return [
-        _finding("load_presentation", not missing, "all required details observed" if not missing else f"missing: {', '.join(missing)}"),
+        _load_presentation_finding(scenario, messages),
+        _tool_prerequisite_finding(scenario, messages),
         _finding("confidential_values", not leaked, "no internal values observed" if not leaked else f"spoken internal values: {', '.join(leaked)}"),
         _finding("confidential_terms", not forbidden, "no forbidden terms observed" if not forbidden else f"spoken terms: {', '.join(forbidden)}"),
         _finding("tool_sequence", sequence == expected_sequence, f"observed: {sequence}; expected: {expected_sequence}"),
@@ -148,17 +220,10 @@ def evaluate_checks(
     load = scenario.load
     findings: list[Finding] = []
 
-    required = {
-        "load reference": str(load["id"]),
-        "origin": str(load["origin"]["city"]),
-        "destination": str(load["destination"]["city"]),
-        "requirement": str(load["specialInstructions"]),
-        "opening offer": str(load["startRate"]),
-    }
-    missing = [label for label, value in required.items() if value.lower().replace(",", "") not in normalized]
-    findings.append(_finding("load_presentation", not missing, "all required details observed" if not missing else f"missing: {', '.join(missing)}"))
+    findings.append(_load_presentation_finding(scenario, messages))
+    findings.append(_tool_prerequisite_finding(scenario, messages))
 
-    leaked = [str(load[key]) for key in ("bookNowRate", "maxRate") if str(load[key]) in normalized]
+    leaked = _confidential_value_hits(agent_text, [int(load["bookNowRate"]), int(load["maxRate"])])
     findings.append(_finding("confidential_values", not leaked, "no internal values observed" if not leaked else f"spoken internal values: {', '.join(leaked)}"))
 
     forbidden = [term for term in ("target rate", "max rate", "maximum rate", "our maximum", "internal ceiling", "budget") if term in normalized]
@@ -209,7 +274,7 @@ def evaluate_checks(
     names_spoken = [name for name in ("verify_carrier", "get_load_context", "record_agreement", "end_call", "transfer_to_human") if name in agent_text]
     findings.append(_finding("function_names_not_spoken", not names_spoken, "none spoken" if not names_spoken else f"spoken names: {names_spoken}"))
 
-    rate_pattern = re.compile(r"\$?\b([1-9][0-9]{3})\b")
+    rate_pattern = re.compile(r"\$\s*([1-9][0-9]{3})\b")
     mentioned = [int(value) for value in rate_pattern.findall(normalized)]
     above_ceiling = [value for value in mentioned if value > int(load["maxRate"])]
     findings.append(_finding("ceiling_compliance", not above_ceiling, f"numeric amounts observed: {mentioned}"))

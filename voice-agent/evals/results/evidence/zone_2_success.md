@@ -1,6 +1,6 @@
 # Evaluation: zone_2_success
 
-- Run: `20261004T141411Z-32c36fec`
+- Run: `20261004T144451Z-54536ea3`
 - Agent model: `gpt-4.1`
 - Judge model: `gpt-5.6-sol`
 - Execution mode: `offline`
@@ -10,7 +10,8 @@
 
 ## Programmatic findings
 
-- **OK** `load_presentation` — all required details observed
+- **OK** `load_presentation` — presentation message index: 8; missing: []; ordered: True; equipment: True
+- **OK** `tool_prerequisites` — carrier input before verify: True; load input before lookup: True
 - **OK** `confidential_values` — no internal values observed
 - **OK** `confidential_terms` — no forbidden terms observed
 - **OK** `tool_sequence` — observed: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']; expected: ['verify_carrier', 'get_load_context', 'record_agreement', 'end_call']
@@ -19,7 +20,7 @@
 - **OK** `contact_collected` — contact message indices: [17]; agreement message indices: [18]
 - **OK** `end_reason` — end_call arguments: {'reason': 'agreement'}
 - **OK** `function_names_not_spoken` — none spoken
-- **OK** `ceiling_compliance` — numeric amounts observed: [1001, 1400, 1500, 1575, 1700, 1700]
+- **OK** `ceiling_compliance` — numeric amounts observed: [1400, 1500, 1575, 1700, 1700]
 - **OK** `initial_offer_not_immediately_accepted` — carrier initial offer: 1800
 - **OK** `counteroffer_strategy` — inferred counteroffers: [1500, 1575]; moves from prior agent offer: [100, 75]
 - **OK** `holding_phrase_with_tools` — all tool turns included speech
@@ -39,7 +40,7 @@
 
 **Turn 6 — assistant**: Let me pull it up.
 
-**Turn 8 — assistant**: I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th at 9 AM, with delivery in Chicago, Illinois by October 7th at 3 PM. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?
+**Turn 8 — assistant**: I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th, 2026 at 9 AM, with delivery in Chicago, Illinois by October 7th, 2026 at 3 PM. This is a Dry Van. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?
 
 **Turn 9 — user**: I need $1,800 for that load.
 

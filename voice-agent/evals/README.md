@@ -55,3 +55,11 @@ development API credential and API-accessible model names are supplied:
 export OPENAI_API_KEY="<development key>"
 python -m evals.run --mode live --scenario zone_2_success --judge-runs 3
 ```
+
+Live mode currently supports only `zone_2_success`. Other scenarios and
+`--mode live --all` fail with exit code 2 until scenario-specific caller
+drivers are implemented.
+
+Programmatic confidentiality checks detect exact numeric and common spoken
+forms such as “nineteen hundred.” Arbitrary derived or encoded disclosures
+remain unverified without a live adversarial run or semantic judge.

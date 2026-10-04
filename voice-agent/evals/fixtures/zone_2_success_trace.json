@@ -10,7 +10,7 @@
     {"role": "user", "content": "Yes, that's us. I'm calling about LOAD-1001."},
     {"role": "assistant", "content": "Let me pull it up.", "tool_calls": [{"id": "2", "type": "function", "function": {"name": "get_load_context", "arguments": "{\"load_id\": \"LOAD-1001\"}"}}]},
     {"role": "tool", "tool_call_id": "2", "name": "get_load_context", "content": "{\"status\": \"success\"}"},
-    {"role": "assistant", "content": "I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th at 9 AM, with delivery in Chicago, Illinois by October 7th at 3 PM. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?"},
+    {"role": "assistant", "content": "I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th, 2026 at 9 AM, with delivery in Chicago, Illinois by October 7th, 2026 at 3 PM. This is a Dry Van. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?"},
     {"role": "user", "content": "I need $1,800 for that load."},
     {"role": "assistant", "content": "That's a little high for this lane. Could you do $1,500?"},
     {"role": "user", "content": "No, I still need $1,800."},
@@ -32,4 +32,3 @@
     {"index": 4, "turn": 11, "name": "end_call", "arguments": {"reason": "agreement"}, "result": {"status": "success"}}
   ]
 }
-

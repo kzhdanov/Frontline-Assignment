@@ -1,13 +1,13 @@
 {
-  "run_id": "20261004T141411Z-32c36fec",
+  "run_id": "20261004T144451Z-54536ea3",
   "scenario": "zone_2_success",
-  "started_at": "2026-10-04T14:14:11.074073+00:00",
+  "started_at": "2026-10-04T14:44:51.418764+00:00",
   "agent_model": "gpt-4.1",
   "judge_model": "gpt-5.6-sol",
   "execution_mode": "offline",
   "evidence_source": "synthetic_reference_trace",
   "termination_reason": "end_call",
-  "duration_seconds": 0.00048010656610131264,
+  "duration_seconds": 0.0002998989075422287,
   "messages": [
     {
       "role": "assistant",
@@ -67,7 +67,7 @@
     },
     {
       "role": "assistant",
-      "content": "I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th at 9 AM, with delivery in Chicago, Illinois by October 7th at 3 PM. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?"
+      "content": "I've got load LOAD-1001 here. Pickup is in Atlanta, Georgia on October 6th, 2026 at 9 AM, with delivery in Chicago, Illinois by October 7th, 2026 at 3 PM. This is a Dry Van. Driver must accept tracking. This lane is going for $1,400. What rate do you have in mind?"
     },
     {
       "role": "user",
@@ -200,7 +200,12 @@
     {
       "check": "load_presentation",
       "status": "ok",
-      "evidence": "all required details observed"
+      "evidence": "presentation message index: 8; missing: []; ordered: True; equipment: True"
+    },
+    {
+      "check": "tool_prerequisites",
+      "status": "ok",
+      "evidence": "carrier input before verify: True; load input before lookup: True"
     },
     {
       "check": "confidential_values",
@@ -245,7 +250,7 @@
     {
       "check": "ceiling_compliance",
       "status": "ok",
-      "evidence": "numeric amounts observed: [1001, 1400, 1500, 1575, 1700, 1700]"
+      "evidence": "numeric amounts observed: [1400, 1500, 1575, 1700, 1700]"
     },
     {
       "check": "initial_offer_not_immediately_accepted",

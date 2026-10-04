@@ -78,6 +78,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.judge_runs < 1:
         print("error: --judge-runs must be positive", file=sys.stderr)
         return 2
+    if args.mode == "live" and (args.all or args.scenario != "zone_2_success"):
+        print("error: live mode currently supports only --scenario zone_2_success", file=sys.stderr)
+        return 2
     names = [args.scenario]
     if args.all:
         names = sorted(path.stem for path in (Path(__file__).parent / "scenarios").glob("*.json"))

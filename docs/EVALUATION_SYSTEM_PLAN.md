@@ -227,6 +227,8 @@ detection. They make no model or external-service calls.
 - Release thresholds and aggregate pass/fail policy
 - Multiple agent runs for measuring agent variance
 - Required live agent and LLM-judge execution when a development gateway is available
+- Semantic detection of arbitrary derived or encoded confidential values
+- Scenario-specific live caller drivers beyond `zone_2_success`
 - Audio, STT, TTS, latency, interruption, Daily, and real transfer evaluation
 - Frontend evaluation
 - CI execution of credentialed live evaluations

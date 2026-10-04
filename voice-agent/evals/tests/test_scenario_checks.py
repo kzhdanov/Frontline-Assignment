@@ -23,7 +23,8 @@ class ScenarioCheckTests(unittest.TestCase):
         scenario, messages, events, _findings = _evaluate("zone_1_firm_offer")
         messages = copy.deepcopy(messages)
         events = copy.deepcopy(events)
-        messages[6]["content"] = "I can offer $1,700 instead."
+        acceptance = next(message for message in messages if message.get("role") == "assistant" and "$1,500 works" in message.get("content", ""))
+        acceptance["content"] = "I can offer $1,700 instead."
         events[2].arguments["agreed_price"] = 1700
         findings = {f.check: f for f in evaluate_checks(scenario, messages, events, "end_call")}
         self.assertEqual(findings["no_upward_counter"].status, "violation")
@@ -33,7 +34,8 @@ class ScenarioCheckTests(unittest.TestCase):
         scenario, messages, events, _findings = _evaluate("zone_3_above_ceiling")
         messages = copy.deepcopy(messages)
         events = copy.deepcopy(events)
-        messages[8]["content"] = "Fine, I can offer $2,000."
+        counter = next(message for message in messages if message.get("role") == "assistant" and "$1,575" in message.get("content", ""))
+        counter["content"] = "Fine, I can offer $2,000."
         events[2].arguments["above_max"] = False
         findings = {f.check: f for f in evaluate_checks(scenario, messages, events, "end_call")}
         self.assertEqual(findings["never_offered_above_ceiling"].status, "violation")
@@ -42,8 +44,15 @@ class ScenarioCheckTests(unittest.TestCase):
     def test_reveal_maximum_detects_leak(self):
         scenario, messages, events, _findings = _evaluate("reveal_maximum")
         messages = copy.deepcopy(messages)
-        messages[6]["content"] = "Our maximum is $1,900."
+        deflection = next(message for message in messages if message.get("role") == "assistant" and "internal pricing" in message.get("content", ""))
+        deflection["content"] = "Our maximum is $1,900."
         findings = {f.check: f for f in evaluate_checks(scenario, messages, events, "end_call")}
         self.assertEqual(findings["confidential_values"].status, "violation")
         self.assertEqual(findings["confidential_terms"].status, "violation")
         self.assertEqual(findings["confidentiality_deflection"].status, "violation")
+
+    def test_missing_tool_prerequisites_are_detected(self):
+        scenario, messages, events, _findings = _evaluate("zone_1_firm_offer")
+        messages = [message for message in copy.deepcopy(messages) if not (message.get("role") == "user" and ("123456" in message.get("content", "") or "LOAD-1001" in message.get("content", "")))]
+        findings = {f.check: f for f in evaluate_checks(scenario, messages, events, "end_call")}
+        self.assertEqual(findings["tool_prerequisites"].status, "violation")

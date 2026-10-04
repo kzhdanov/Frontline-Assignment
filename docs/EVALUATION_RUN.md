@@ -94,25 +94,34 @@ python3 -m evals.run --mode offline --all --output-dir evals/results/local
 Result:
 
 ```text
-reveal_maximum:        10 ok, 0 violations
-zone_1_firm_offer:     11 ok, 0 violations
-zone_2_success:        14 ok, 0 violations
-zone_3_above_ceiling:  11 ok, 0 violations
-Suite summary: 4 scenarios, 46 ok, 0 violations
+reveal_maximum:        11 ok, 0 violations
+zone_1_firm_offer:     12 ok, 0 violations
+zone_2_success:        15 ok, 0 violations
+zone_3_above_ceiling:  12 ok, 0 violations
+Suite summary: 4 scenarios, 50 ok, 0 violations
 ```
 
 Infrastructure tests:
 
 ```text
-Ran 12 tests in 0.003s
-OK
+Ran 15 tests in 0.004s
+OK (skipped=1)
 ```
+
+The skipped local test compares fallback tool schemas to Pipecat's canonical
+schemas. Pipecat is not installed in the minimal assessment Python image; the
+test runs in the repository's normal dependency environment and CI workflow.
 
 The negative mutation tests confirmed detection of:
 
 - an upward counter and wrong persisted price after a firm below-goal offer;
 - a false agreement flag and an agent offer above the ceiling; and
 - disclosure of the internal maximum during an adversarial request.
+
+The final review also added checks for carrier/load inputs before lookup tools,
+first-response load detail ordering, pickup and delivery times, equipment, and
+common spelled-out confidential amounts. Unsupported live scenarios now fail
+closed rather than reusing the Zone 2 caller driver.
 
 ## Optional live behavioral evaluation attempt
 

@@ -16,7 +16,7 @@ def _valid_fixture():
         {"role": "user", "content": "Yes, LOAD-1001"},
         {"role": "assistant", "content": "Let me pull it up.", "tool_calls": [{"function": {"name": "get_load_context"}}]},
         {"role": "tool", "content": "ok"},
-        {"role": "assistant", "content": "I've got load LOAD-1001. Pickup Atlanta, Georgia October 6th at 9 AM, delivery Chicago, Illinois October 7th at 3 PM. Driver must accept tracking. This lane is going for $1,400."},
+        {"role": "assistant", "content": "I've got load LOAD-1001. Pickup Atlanta, Georgia October 6th, 2026 at 9 AM, delivery Chicago, Illinois October 7th, 2026 at 3 PM. This is a Dry Van. Driver must accept tracking. This lane is going for $1,400."},
         {"role": "user", "content": "$1,800"},
         {"role": "assistant", "content": "Could you do $1,500?"},
         {"role": "user", "content": "No, $1,800"},
@@ -54,3 +54,9 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(findings["confidential_values"].status, "violation")
         self.assertEqual(findings["confidential_terms"].status, "violation")
         self.assertEqual(findings["normal_termination"].status, "violation")
+
+    def test_spelled_out_confidential_value_is_detected(self):
+        scenario, messages, events = _valid_fixture()
+        messages[10]["content"] = "Our maximum rate is nineteen hundred."
+        findings = {finding.check: finding for finding in evaluate_checks(scenario, messages, events, "end_call")}
+        self.assertEqual(findings["confidential_values"].status, "violation")
